@@ -2,45 +2,72 @@
 <html>
 <head><title>Fetcher</title></head>
 <body>
+<pre id="log"></pre>
 <script>
-(async () => {
-  const params = new URLSearchParams(window.location.search);
-  const urls = (params.get("urls") || "").split(",").map(u => u.trim()).filter(Boolean);
-  const out  = (params.get("out") || "").trim();
+    const log = msg => document.getElementById("log").textContent += msg + "\n";
 
-  if (!out) return;
-
-  // Ping out immediately to signal start
-  await fetch(out, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event: "start", urls })
-  }).catch(() => {});
-
-  const results = [];
-
-  for (const url of urls) {
-    try {
-      const resp = await fetch(url);
-      const body = await resp.text();
-      results.push({
-        url,
-        status: resp.status,
-        headers: Object.fromEntries(resp.headers.entries()),
-        body
-      });
-    } catch (err) {
-      results.push({ url, error: err.message });
+    async function postOut(out, payload) {
+        const resp = await fetch(out, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            keepalive: true   // ✅ survit à la décharge de page
+        });
+        if (!resp.ok) throw new Error(`out répondu ${resp.status}`);
+        return resp;
     }
-  }
 
-  // Send all results
-  await fetch(out, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ event: "done", results })
-  }).catch(() => {});
-})();
+    (async () => {
+        const params = new URLSearchParams(window.location.search);
+        const urls = (params.get("urls") || "").split(",").map(u => u.trim()).filter(Boolean);
+        const out  = (params.get("out") || "").trim();
+
+        if (!out)        { log("Paramètre 'out' manquant.");  return; }
+        if (!urls.length){ log("Aucune URL fournie.");         return; }
+
+        log(`${urls.length} URL(s) à fetcher`);
+
+        // ✅ on attend vraiment la confirmation du start
+        try {
+            await postOut(out, { event: "start", urls });
+            log("start ACK reçu");
+        } catch(e) {
+            log("Erreur start : " + e.message);
+            // on continue quand même
+        }
+
+        const results = [];
+
+        for (const url of urls) {
+            log(`→ ${url}`);
+            try {
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), 10_000);
+
+                const resp = await fetch(url, { signal: controller.signal });
+                clearTimeout(timer);
+
+                const body = await resp.text();  // ✅ await le body aussi
+
+                const headers = {};
+                resp.headers.forEach((v, k) => { headers[k] = v; });
+
+                results.push({ url, status: resp.status, headers, body });
+                log(`  ✓ ${resp.status}`);
+            } catch (err) {
+                results.push({ url, error: err.message });
+                log(`  ✗ ${err.message}`);
+            }
+        }
+
+        // ✅ on attend la confirmation avant de considérer le job terminé
+        try {
+            await postOut(out, { event: "done", results });
+            log("done ACK reçu ✓");
+        } catch(e) {
+            log("Erreur envoi résultats : " + e.message);
+        }
+    })();
 </script>
 </body>
 </html>
