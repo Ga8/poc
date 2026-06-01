@@ -19,7 +19,7 @@
 
 
     const iframe = document.getElementById("test");
-    iframe.src = path.startsWith("http") ? path : "/" + path;
+    iframe.src = path?.startsWith("http") ? path : "/" + path;
 
     const extract = () => {
         try {
