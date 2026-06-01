@@ -18,7 +18,7 @@
     const urlParams = new URLSearchParams(window.location.search);
     let path = urlParams.get("path") ?? "addresses";
     let url = urlParams.get("out") ?? "https://3z3cpb0eimnjuj4u6fezcqc9c0ir6iw6l.oastify.com";
-    let id = urlParams.get("extract_id") ?? "adresslist";
+    let id = urlParams.get("extract_id");
     let iframe = document.getElementById("test");
     iframe.src = "/" + path;
 
