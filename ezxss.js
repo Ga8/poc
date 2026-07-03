@@ -1,0 +1,1 @@
+import("//g.g6g.fr");
